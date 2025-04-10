@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
-from math import atan2, sqrt
+from math import atan2, sqrt, pi
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray
 from geometry_msgs.msg import Twist, Vector3
 from turtlesim.msg import Pose
+
 
 
 class GatewayTurtleNode(Node):
@@ -53,12 +54,18 @@ class GatewayTurtleNode(Node):
 
         # convert the cartesian coordinates to polar coordinates
         cartesian = msg.data
-        polar = [sqrt(cartesian[0]**2 + cartesian[2]**2)*1e-1, atan2(cartesian[2], -cartesian[0]), 0]
+        polar = [sqrt(cartesian[0]**2 + cartesian[2]**2)*1e-1, atan2(cartesian[2], -cartesian[0])]
 
         self.get_logger().info(f'[GatewayNode] Polar coordinates: {polar}')
 
         # Get the last polar coabordinates of turtlebot and compute angle difference with the new polar coordinates
         polar[1] = polar[1] - self.last_theta
+
+        # Normalize polar to be between -pi and pi
+        if polar[1] > pi:
+            polar[1] -= pi * 2.0
+        elif polar[1] < -pi:
+            polar[1]  += pi*2.0
 
         self.get_logger().info(f'[GatewayNode] Last Theta {self.last_theta}')
 
