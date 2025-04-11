@@ -41,6 +41,7 @@ class MotorController(Sofa.Core.Controller):
         if MyGui.getRobotConnection():
             EmioMotors.setAngle(angles)
 
+
 class TargetController(Sofa.Core.Controller):
     """
     Controller class to set the target position of the effector.
@@ -85,6 +86,7 @@ class TargetController(Sofa.Core.Controller):
                                                            self.target.position.value[0][1] - self.cameracorrection[1],
                                                            self.target.position.value[0][2] - self.cameracorrection[2]]]
 
+
 def getParserArgs():
     """
     Parse the command line arguments.
@@ -103,6 +105,7 @@ def getParserArgs():
         args = parser.parse_args([])
     return args
 
+
 def createScene(rootnode):
     from utils.header import addHeader, addSolvers
     from parts.controllers.assemblycontroller import AssemblyController
@@ -115,7 +118,6 @@ def createScene(rootnode):
 
     rootnode.dt = 0.01
     rootnode.gravity = [0., -9810., 0.]
-    addSolvers(simulation, rayleighMass=0, rayleighStiffness=0)
 
     emios = [] # Let's create three Emios, they will be used as a sensor, a phantom, and the last one for validation
     for i in range(NBEMIOS):
@@ -132,6 +134,8 @@ def createScene(rootnode):
         emios.append(emio)
 
         simulation.addChild(emio)
+        addSolvers(emio, rayleighMass=0, rayleighStiffness=0)
+
         emio.attachCenterPartToLegs()
         assemblycontroller = AssemblyController(emio)
         emio.addObject(assemblycontroller)
@@ -166,36 +170,34 @@ def createScene(rootnode):
                                                        filter_alpha=0.9, # Factor used in the filter
                                                        rotation=simulation.EmioSensor.Camera.torealrotation,
                                                        translation=simulation.EmioSensor.Camera.torealtranslation))
-        except RuntimeError:
-            Sofa.msg_error(__file__, "Camera not detected")
+        except RuntimeError as e:
+            Sofa.msg_error(__file__, "Problem with the camera: " + str(e))
 
-    if dotTracker is not None:
-        for emio in [simulation.EmioSensor, simulation.EmioPhantom]:
-            # Add the position we want to observe (the effector)
-            emio.effector.addObject("MechanicalObject", position=[[0, 0, 0]])
-            emio.effector.addObject('PositionEffector',
-                                    indices=[0],
-                                    useDirections=[1, 1, 1, 0, 0, 0],
-                                    limitShiftToTarget=True,
-                                    maxShiftToTarget=50,  # mm
-                                    effectorGoal=[0,182,0], 
-                                    name="EffectorCoord")
-            emio.effector.addObject("RigidMapping", index=0)
+    simulation.EmioPhantom.addObject("VisualStyle", displayFlags=["showVisualModels"])
+    simulation.EmioSensor.addObject("VisualStyle", displayFlags=["hideVisualModels"])
+    for emio in [simulation.EmioSensor, simulation.EmioPhantom]:
+        # Add the position we want to observe (the effector)
+        emio.effector.addObject("MechanicalObject", position=[[0, 0, 0]])
+        emio.effector.addObject('PositionEffector',
+                                indices=[0],
+                                useDirections=[1, 1, 1, 0, 0, 0],
+                                limitShiftToTarget=True,
+                                maxShiftToTarget=50,  # mm
+                                effectorGoal=[0, 165, 0], 
+                                name="EffectorCoord")
+        emio.effector.addObject("RigidMapping", index=0)
 
-            # Sensor (to retrieve the forces applied on the real robot effector)
-            sensor = emio.centerpart.addChild("Sensor")
-            sensor.addObject("MechanicalObject", position=[[0, 0, 0]])
-            sensor.addObject("ForcePointActuator", 
-                            name="ForcePointActuator",
-                            indices=[0],
-                            direction=[0, 0, 0],
-                            applyForce=False, # we won't apply the force on the Sensor model, instead we apply the force on the other Emios for phantom and validation
-                            showForce=False
-                            )
-            sensor.addObject("RigidMapping", index=0)
-
-        simulation.EmioPhantom.addObject("VisualStyle", displayFlags=["showVisualModels"])
-        simulation.EmioSensor.addObject("VisualStyle", displayFlags=["hideVisualModels"])
+        # Sensor (to retrieve the forces applied on the real robot effector)
+        sensor = emio.centerpart.addChild("Sensor")
+        sensor.addObject("MechanicalObject", position=[[0, 0, 0]])
+        sensor.addObject("ForcePointActuator", 
+                        name="ForcePointActuator",
+                        indices=[0],
+                        direction=[0, 0, 0],
+                        applyForce=False, # we won't apply the force on the Sensor model, instead we apply the force on the other Emios for phantom and validation
+                        showForce=True
+                        )
+        sensor.addObject("RigidMapping", index=0)
 
         # The Emio used for validation
         # simulation.EmioValidation.addObject("VisualStyle", displayFlags=["showVisualModels"])
@@ -204,13 +206,14 @@ def createScene(rootnode):
         # simulation.EmioValidation.effector.addObject("VisualStyle", displayFlags=["showForceFields"])
         # simulation.EmioValidation.effector.addObject("RigidMapping", index=0)
 
+    # GUI
+    MyGui.SimulationState.addData("Sensor", "Force", simulation.EmioSensor.effector.EffectorCoord.effectorGoal) # We use this to send the force through ROS2
+    MyGui.MyRobotWindow.addSetting("Configuration", simulation.tilt, 0, 1) # Add a setting ti the GUI to choose the configuration of the robot
+
+    if dotTracker is not None:
         # Feed the effector target with the camera position
         rootnode.addObject(TargetController(rootnode=rootnode, 
                                             assemblycontroller=assemblycontroller, 
                                             sensor=sensor))
-
-        # GUI
-        MyGui.SimulationState.addData("Sensor", "Force", simulation.EmioSensor.effector.EffectorCoord.effectorGoal) # We use this to send the force through ROS2
-        MyGui.MyRobotWindow.addSetting("Configuration", simulation.tilt, 0, 1) # Add a setting ti the GUI to choose the configuration of the robot
 
     return rootnode
