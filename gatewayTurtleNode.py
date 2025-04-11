@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from math import atan2, sqrt, pi
+from math import atan2, sqrt, pi, cos, sin
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray
@@ -52,11 +52,23 @@ class GatewayTurtleNode(Node):
             return
         twist_msg = Twist() 
 
-        # convert the cartesian coordinates to polar coordinates
         cartesian = msg.data
-        polar = [sqrt(cartesian[0]**2 + cartesian[2]**2)*1e-1, atan2(cartesian[2], -cartesian[0])]
+        # we rotate the coordinates of pi/4 to match the turtlebot's coordinates
+        tetha = pi / 4
+        cartesian[0] = cartesian[0] * cos(tetha) - cartesian[2] * sin(tetha)
+        cartesian[2] = cartesian[0] * sin(tetha) + cartesian[2] * cos(tetha)
+
+        # we scale the force 
+        scaling_factor = 3e-2
+
+        # convert the cartesian coordinates to polar coordinates
+        polar = [sqrt(cartesian[0]**2 + cartesian[2]**2)*scaling_factor, atan2(cartesian[2], -cartesian[0])]
 
         self.get_logger().info(f'[GatewayNode] Polar coordinates: {polar}')
+
+        # Filter the linear velocity
+        if abs(polar[0]) < 0.5:
+            polar[0] = 0.0
 
         # Get the last polar coabordinates of turtlebot and compute angle difference with the new polar coordinates
         polar[1] = polar[1] - self.last_theta
