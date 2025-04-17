@@ -193,7 +193,7 @@ def createScene(rootnode):
 
     # GUI
     MyGui.SimulationState.addData("Sensor", "Force", sensor.Force) # We use this to send the force through ROS2
-    MyGui.SimulationState.addData("TCPTarget", "Frame", emio.effector.getMechanicalState().position) # We use this to send the position effector through ROS2
+    MyGui.SimulationState.addData("TCP", "Frame", emio.effector.getMechanicalState().position) # We use this to send the position effector through ROS2
     MyGui.MyRobotWindow.addSetting("Configuration", simulation.tilt, 0, 1) # Add a setting ti the GUI to choose the configuration of the robot
 
     if dotTracker is not None:
