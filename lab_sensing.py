@@ -72,7 +72,8 @@ class TargetController(Sofa.Core.Controller):
         # The target position is the position from the camera minus the correction
         self.effector.EffectorCoord.effectorGoal.value = [[self.target.position.value[0][0] - self.cameracorrection[0],
                                                             self.target.position.value[0][1] - self.cameracorrection[1],
-                                                            self.target.position.value[0][2] - self.cameracorrection[2]]]
+                                                            self.target.position.value[0][2] - self.cameracorrection[2],
+                                                            0., 0., 0., 1.]]
         
     def onAnimateEndEvent(self, _):
         # Update the force applied on the sensor
@@ -166,13 +167,13 @@ def createScene(rootnode):
             Sofa.msg_error(__file__, "Problem with the camera: " + str(e))
 
     # Add the position we want to observe (the effector)
-    emio.effector.addObject("MechanicalObject", position=[[0, 0, 0]])
-    emio.effector.addObject('PositionEffector',
+    emio.effector.addObject("MechanicalObject", template="Rigid3", position=[[0, 0, 0, 0, 0, 0, 1]])
+    emio.effector.addObject('PositionEffector', template="Rigid3", 
                             indices=[0],
                             useDirections=[1, 1, 1, 0, 0, 0],
                             limitShiftToTarget=True,
                             maxShiftToTarget=50,  # mm
-                            effectorGoal=[0, 165, 0], 
+                            effectorGoal=[0, 165, 0, 0, 0, 0, 1], 
                             name="EffectorCoord")
     emio.effector.addObject("RigidMapping", index=0)
 
@@ -192,6 +193,7 @@ def createScene(rootnode):
 
     # GUI
     MyGui.SimulationState.addData("Sensor", "Force", sensor.Force) # We use this to send the force through ROS2
+    MyGui.SimulationState.addData("TCPTarget", "Frame", emio.effector.getMechanicalState().position) # We use this to send the position effector through ROS2
     MyGui.MyRobotWindow.addSetting("Configuration", simulation.tilt, 0, 1) # Add a setting ti the GUI to choose the configuration of the robot
 
     if dotTracker is not None:
