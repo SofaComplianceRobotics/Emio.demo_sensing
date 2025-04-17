@@ -7,8 +7,6 @@ import Sofa.Core
 sys.path.append(os.path.dirname(os.path.realpath(__file__))+"/../EmioLabs/assets/")
 import parts.connection.emiomotors as EmioMotors
 
-NBEMIOS = 2
-
 
 class MotorController(Sofa.Core.Controller):
     """
@@ -17,11 +15,11 @@ class MotorController(Sofa.Core.Controller):
     Only two possible configurations of the robot are considered in this lab.
     """
     
-    def __init__(self, emios, config1_angles, config2_angles, *args, **kwargs):
+    def __init__(self, emio, config1_angles, config2_angles, *args, **kwargs):
         Sofa.Core.Controller.__init__(self, *args, **kwargs)
         self.name = "MotorController"
-        self.emios = emios
-        self.tilt = emios[0].getRoot().Simulation.tilt
+        self.emio = emio
+        self.tilt = emio.getRoot().Simulation.tilt
         self.config1_angles = config1_angles
         self.config2_angles = config2_angles
         EmioMotors.openAndConfig()
@@ -29,13 +27,12 @@ class MotorController(Sofa.Core.Controller):
     def onAnimateEndEvent(self, _):
         # Check and apply the chosen configuration 
         angles = self.config1_angles
-        if self.tilt.value: # EmioSensor
+        if self.tilt.value: 
             angles = self.config2_angles
         
         # Apply the configuration to the motors in the simulation
-        for emio in self.emios:
-            for i in range(4):
-                emio.motors[i].getMechanicalState().rest_position.value = [[angles[i]]]
+        for i in range(4):
+            self.emio.motors[i].getMechanicalState().rest_position.value = [[angles[i]]]
 
         # Send the angles to the real robot
         if MyGui.getRobotConnection():
@@ -53,8 +50,7 @@ class TargetController(Sofa.Core.Controller):
         self.name = "TargetController"
         self.rootnode = rootnode
         self.target = rootnode.DepthCamera.getMechanicalState()
-        self.effector1 = rootnode.Simulation.EmioSensor.CenterPart.Effector
-        self.effector2 = rootnode.Simulation.EmioPhantom.CenterPart.Effector
+        self.effector = rootnode.Simulation.Emio.CenterPart.Effector
         self.assemblycontroller = assemblycontroller
         self.sensor = sensor
 
@@ -68,23 +64,22 @@ class TargetController(Sofa.Core.Controller):
         # Once the correction calculated, we can apply the sensed force to the simulated robot
         if not self.correctiondone and self.assemblycontroller.done:
             self.correctiondone = True # We only want to do this once
-            for i in range(NBEMIOS):
-                self.cameracorrection[i] = self.target.position.value[0][i] - self.effector1.getMechanicalState().position.value[0][i]
-            self.rootnode.Simulation.EmioPhantom.CenterPart.Sensor.ForcePointActuator.applyForce=True
-
-        # Validate the force applied on the sensor
-        # f = self.rootnode.Simulation.EmioSensor.CenterPart.Sensor.ForcePointActuator.force.value
-        # dt = self.rootnode.dt.value
-        # s = 1./dt # The value from ForcePointActuator is an impulse and should be divide by the time step to retreive the force
-        # s *= 0.055 # TODO: weird factor !!! 
-        # self.rootnode.Simulation.EmioValidation.CenterPart.Effector.ConstantForceField.totalForce.value = [f[0]*s, f[1]*s, f[2]*s]
+            for i in range(3):
+                self.cameracorrection[i] = self.target.position.value[0][i] - self.effector.getMechanicalState().position.value[0][i]
+            self.rootnode.Simulation.Emio.CenterPart.Sensor.ForcePointActuator.applyForce=True
 
         # Update the target position of the effector
         # The target position is the position from the camera minus the correction
-        for effector in [self.effector1, self.effector2]:
-            effector.EffectorCoord.effectorGoal.value = [[self.target.position.value[0][0] - self.cameracorrection[0],
-                                                           self.target.position.value[0][1] - self.cameracorrection[1],
-                                                           self.target.position.value[0][2] - self.cameracorrection[2]]]
+        self.effector.EffectorCoord.effectorGoal.value = [[self.target.position.value[0][0] - self.cameracorrection[0],
+                                                            self.target.position.value[0][1] - self.cameracorrection[1],
+                                                            self.target.position.value[0][2] - self.cameracorrection[2]]]
+        
+    def onAnimateEndEvent(self, _):
+        # Update the force applied on the sensor
+        dt = self.rootnode.dt.value
+        self.sensor.Force.value = [self.sensor.ForcePointActuator.force.value[0] / dt,
+                                   self.sensor.ForcePointActuator.force.value[1] / dt,
+                                   self.sensor.ForcePointActuator.force.value[2] / dt]
 
 
 def getParserArgs():
@@ -114,35 +109,32 @@ def createScene(rootnode):
     args = getParserArgs()
 
     settings, modelling, simulation = addHeader(rootnode, inverse=True)
-    rootnode.VisualStyle.displayFlags = ["showVisual"]
+    rootnode.VisualStyle.displayFlags = ["showVisual", "showInteractionForceFields"]
 
     rootnode.dt = 0.01
     rootnode.gravity = [0., -9810., 0.]
 
-    emios = [] # Let's create three Emios, they will be used as a sensor, a phantom, and the last one for validation
-    for i in range(NBEMIOS):
-        # Add Emio to the scene
-        emio = Emio(name="Emio" + ["Sensor", "Phantom", "Validation"][i],
-                    legsName=["blueleg"],
-                    legsModel=["beam"],
-                    legsPositionOnMotor=["clockwiseup", "counterclockwiseup", "clockwiseup", "counterclockwiseup"],
-                    centerPartName="yellowpart",
-                    centerPartType="rigid",
-                    extended=False)
-        if not emio.isValid():
-            return
-        emios.append(emio)
+    # Add Emio to the scene
+    emio = Emio(name="Emio",
+                legsName=["blueleg"],
+                legsModel=["beam"],
+                legsPositionOnMotor=["counterclockwiseup", "clockwiseup", "counterclockwiseup", "clockwiseup"],
+                centerPartName="bluepart",
+                centerPartType="rigid",
+                extended=False)
+    if not emio.isValid():
+        return
 
-        simulation.addChild(emio)
-        addSolvers(emio, rayleighMass=0, rayleighStiffness=0)
+    simulation.addChild(emio)
+    addSolvers(emio, rayleighMass=0, rayleighStiffness=0)
 
-        emio.attachCenterPartToLegs()
-        assemblycontroller = AssemblyController(emio)
-        emio.addObject(assemblycontroller)
+    emio.attachCenterPartToLegs()
+    assemblycontroller = AssemblyController(emio)
+    emio.addObject(assemblycontroller)
 
-        # In this lab we fix the motor
-        for i in range(4):
-            emio.motors[i].addObject("RestShapeSpringsForceField", points=[0], stiffness=1e6)
+    # In this lab we fix the motor
+    for i in range(4):
+        emio.motors[i].addObject("RestShapeSpringsForceField", points=[0], stiffness=1e6)
 
     # Let's now add the components for the connection to the real robot 
     dotTracker = None
@@ -152,10 +144,10 @@ def createScene(rootnode):
         simulation.addData(name="tilt", type="bool", value=False)
         # Let's consider two configurations of the robot:
         # 1. The robot is in a upward straight configuration
-        config1_angles = [1., -1., 1., -1.]
+        config1_angles = [0., -0., 0., -0.]
         # 2. The robot is tilted, in the direction away from the camera allowing it to better see the marker
-        config2_angles = [1.62, -1.62, 0.66, -0.66]
-        rootnode.addObject(MotorController(emios, config1_angles, config2_angles))
+        config2_angles = [-1.34, 1.34, 0.53, -0.53]
+        rootnode.addObject(MotorController(emio, config1_angles, config2_angles))
 
         # Camera
         try:
@@ -167,47 +159,39 @@ def createScene(rootnode):
                                                        track_colors=True,
                                                        comp_point_cloud=False,
                                                        scale=1,
-                                                       filter_alpha=0.9, # Factor used in the filter
-                                                       rotation=simulation.EmioSensor.Camera.torealrotation,
-                                                       translation=simulation.EmioSensor.Camera.torealtranslation))
+                                                       filter_alpha=0.5, # Factor used in the filter
+                                                       rotation=emio.Camera.torealrotation,
+                                                       translation=emio.Camera.torealtranslation))
         except RuntimeError as e:
             Sofa.msg_error(__file__, "Problem with the camera: " + str(e))
 
-    simulation.EmioPhantom.addObject("VisualStyle", displayFlags=["showVisualModels"])
-    simulation.EmioSensor.addObject("VisualStyle", displayFlags=["hideVisualModels"])
-    for emio in [simulation.EmioSensor, simulation.EmioPhantom]:
-        # Add the position we want to observe (the effector)
-        emio.effector.addObject("MechanicalObject", position=[[0, 0, 0]])
-        emio.effector.addObject('PositionEffector',
-                                indices=[0],
-                                useDirections=[1, 1, 1, 0, 0, 0],
-                                limitShiftToTarget=True,
-                                maxShiftToTarget=50,  # mm
-                                effectorGoal=[0, 165, 0], 
-                                name="EffectorCoord")
-        emio.effector.addObject("RigidMapping", index=0)
+    # Add the position we want to observe (the effector)
+    emio.effector.addObject("MechanicalObject", position=[[0, 0, 0]])
+    emio.effector.addObject('PositionEffector',
+                            indices=[0],
+                            useDirections=[1, 1, 1, 0, 0, 0],
+                            limitShiftToTarget=True,
+                            maxShiftToTarget=50,  # mm
+                            effectorGoal=[0, 165, 0], 
+                            name="EffectorCoord")
+    emio.effector.addObject("RigidMapping", index=0)
 
-        # Sensor (to retrieve the forces applied on the real robot effector)
-        sensor = emio.centerpart.addChild("Sensor")
-        sensor.addObject("MechanicalObject", position=[[0, 0, 0]])
-        sensor.addObject("ForcePointActuator", 
-                        name="ForcePointActuator",
-                        indices=[0],
-                        direction=[0, 0, 0],
-                        applyForce=False, # we won't apply the force on the Sensor model, instead we apply the force on the other Emios for phantom and validation
-                        showForce=True
-                        )
-        sensor.addObject("RigidMapping", index=0)
-
-        # The Emio used for validation
-        # simulation.EmioValidation.addObject("VisualStyle", displayFlags=["showVisualModels"])
-        # simulation.EmioValidation.effector.addObject("MechanicalObject", position=[[0, 0, 0]])
-        # simulation.EmioValidation.effector.addObject("ConstantForceField", indices=[0], totalForce=[0., 0., 0.], showArrowSize=0.02) # we apply the sensed force here
-        # simulation.EmioValidation.effector.addObject("VisualStyle", displayFlags=["showForceFields"])
-        # simulation.EmioValidation.effector.addObject("RigidMapping", index=0)
+    # Sensor (to retrieve the forces applied on the real robot effector)
+    sensor = emio.centerpart.addChild("Sensor")
+    sensor.addObject("MechanicalObject", position=[[0, 0, 0]])
+    sensor.addObject("ForcePointActuator", 
+                    name="ForcePointActuator",
+                    indices=[0],
+                    direction=[0, 0, 0],
+                    applyForce=False, # We only want to apply the force when the assembly is done
+                    showForce=True, 
+                    visuScale=2
+                    )
+    sensor.addObject("RigidMapping", index=0)
+    sensor.addData(name="Force", type="Vec3d", value=[0, 0, 0]) # We use this to store and send the sensed force through ROS2
 
     # GUI
-    MyGui.SimulationState.addData("Sensor", "Force", simulation.EmioSensor.effector.EffectorCoord.effectorGoal) # We use this to send the force through ROS2
+    MyGui.SimulationState.addData("Sensor", "Force", sensor.Force) # We use this to send the force through ROS2
     MyGui.MyRobotWindow.addSetting("Configuration", simulation.tilt, 0, 1) # Add a setting ti the GUI to choose the configuration of the robot
 
     if dotTracker is not None:

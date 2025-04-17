@@ -59,7 +59,7 @@ class GatewayTurtleNode(Node):
         cartesian[2] = cartesian[0] * sin(tetha) + cartesian[2] * cos(tetha)
 
         # we scale the force 
-        scaling_factor = 3e-2
+        scaling_factor = 3e-3 
 
         # convert the cartesian coordinates to polar coordinates
         polar = [sqrt(cartesian[0]**2 + cartesian[2]**2)*scaling_factor, atan2(cartesian[2], -cartesian[0])]

@@ -22,12 +22,15 @@ source /opt/ros/jazzy/setup.sh
 ros2 run turtlesim turtlesim_node
 ```
 
-In another terminal:
+In another terminal, from the lab_sensing directory:
 ```command
 source /opt/ros/jazzy/setup.sh
-pyenv local python3.12
+pyenv local 3.12
 python gatewayTurtleNode.py
 ```
+
+On the GUI, select the window __Windows>Input/Output__. From this window __Input/Output__, in the output section, select the topic __Sensor/Force__ and click toggle the __Publish__ button.
+Run the simulation by clicking the play button (top middle of the 3D view). You can now play with the demo. 
 
 #runsofa-button("assets/labs/lab_sensing/lab_sensing.py")
 
