@@ -117,10 +117,10 @@ def createScene(rootnode):
 
     # Add Emio to the scene
     emio = Emio(name="Emio",
-                legsName=["blueleg"],
-                legsModel=["beam"],
+                legsName=["sleg"],
+                legsModel=["tetra"],
                 legsPositionOnMotor=["counterclockwiseup", "clockwiseup", "counterclockwiseup", "clockwiseup"],
-                centerPartName="bluepart",
+                centerPartName="yellowpart",
                 centerPartType="rigid",
                 extended=False)
     if not emio.isValid():
@@ -145,9 +145,9 @@ def createScene(rootnode):
         simulation.addData(name="tilt", type="bool", value=False)
         # Let's consider two configurations of the robot:
         # 1. The robot is in a upward straight configuration
-        config1_angles = [0., -0., 0., -0.]
+        config1_angles = [-0.48, 0.48, -0.48, 0.48]
         # 2. The robot is tilted, in the direction away from the camera allowing it to better see the marker
-        config2_angles = [-1.34, 1.34, 0.53, -0.53]
+        config2_angles = [-0.99, 0.99, 0.45, -0.45]
         rootnode.addObject(MotorController(emio, config1_angles, config2_angles))
 
         # Camera

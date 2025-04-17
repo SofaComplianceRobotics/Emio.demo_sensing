@@ -26,7 +26,9 @@ class GatewayTCPTargetEmioGripper(Node):
             10)
         
         self.get_logger().info(f'[GatewayTCPTargetEmioGripper] GatewayTCPTargetEmioGripper created with publisher on {self.publish_topic} and subscriber on {self.subscribe_topic}')
-    
+        self.last_position = [0, 0, 0]
+
+
     def listener_callback(self, msg):
         # Log the received message
         self.get_logger().info(f'[GatewayTCPTargetEmioGripper] Received: {msg}')
@@ -38,9 +40,25 @@ class GatewayTCPTargetEmioGripper(Node):
         # Convert compact Emio configuration to extended Emio configuration
         gripper_msg = Float32MultiArray()
         gripper_msg.data = [0.0] * 7
-        gripper_msg.data[0] = msg.data[0]
-        gripper_msg.data[1] = msg.data[1] - 250
-        gripper_msg.data[2] = msg.data[2]
+        
+        # Position in mm
+        eps = 2 # in mm
+        shift_y = 350 # in mm
+        gripper_msg.data[0] = msg.data[0] if abs(msg.data[0] - self.last_position[0]) > eps else self.last_position[0]
+        gripper_msg.data[1] = msg.data[1] - shift_y if abs(msg.data[1] - self.last_position[1]) > eps else self.last_position[1] - shift_y
+        gripper_msg.data[2] = msg.data[2] if abs(msg.data[2] - self.last_position[2]) > eps else self.last_position[2]
+
+        if gripper_msg.data[1] < -250:
+            gripper_msg.data[1] = -250
+        elif gripper_msg.data[1] > -175:
+            gripper_msg.data[1] = -175
+
+        # Store the last position
+        self.last_position[0] = gripper_msg.data[0] 
+        self.last_position[1] = msg.data[1]
+        self.last_position[2] = gripper_msg.data[2]
+
+        # Orientation
         gripper_msg.data[3] = msg.data[3]
         gripper_msg.data[4] = msg.data[4]
         gripper_msg.data[5] = msg.data[5]
