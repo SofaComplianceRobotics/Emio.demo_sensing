@@ -160,7 +160,7 @@ def createScene(rootnode):
                                                        track_colors=True,
                                                        comp_point_cloud=False,
                                                        scale=1,
-                                                       filter_alpha=0.5, # Factor used in the filter
+                                                       filter_alpha=0.6, # Factor used in the filter
                                                        rotation=emio.Camera.torealrotation,
                                                        translation=emio.Camera.torealtranslation))
         except RuntimeError as e:

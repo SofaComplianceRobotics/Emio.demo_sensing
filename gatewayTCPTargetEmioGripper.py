@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from math import atan2, sqrt, pi, cos, sin
+import numpy
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray
@@ -9,69 +10,92 @@ from turtlesim.msg import Pose
 
 
 
-class GatewayTCPTargetEmioGripper(Node):
+class GatewayEmioJoystick(Node):
 
-    def __init__(self, publishing_topic='/TCPTarget/Frame', subscribed_topic='/TCP/Frame'):
-        super().__init__('gateway_emio_gripper_node')
-        self.publish_topic = publishing_topic
+    def __init__(self, 
+                 publishing_topic='/TCPTarget/Frame', 
+                 subscribed_topic_force='/Sensor/Force', 
+                 subscribed_topic_position='/TCP/Frame'):
+        
+        super().__init__('gateway_emio_joystick_node')
+        self.publishing_topic = publishing_topic
         self.publisher = self.create_publisher(Float32MultiArray, 
-                                               self.publish_topic, 
+                                               self.publishing_topic, 
                                                10)
 
-        self.subscribe_topic = subscribed_topic
-        self.subscription = self.create_subscription(
+        self.subscribed_topic_force = subscribed_topic_force
+        self.subscription_force = self.create_subscription(
             Float32MultiArray,
-            self.subscribe_topic,
-            self.listener_callback,
+            self.subscribed_topic_force,
+            self.listener_callback_force,
             10)
         
-        self.get_logger().info(f'[GatewayTCPTargetEmioGripper] GatewayTCPTargetEmioGripper created with publisher on {self.publish_topic} and subscriber on {self.subscribe_topic}')
-        self.last_position = [0, 0, 0]
+        self.subscribed_topic_position = subscribed_topic_position
+        self.subscription_position = self.create_subscription(
+            Float32MultiArray,
+            self.subscribed_topic_position,
+            self.listener_callback_position,
+            10)
+        
+        self.get_logger().info(f'[GatewayEmioJoystick] Created with publisher on {self.publishing_topic} and subscribers on {self.subscribed_topic_force} and {self.subscribed_topic_position}')
+        self.last_position = [0., 0., 0., 0., 0., 0., 1.]
 
 
-    def listener_callback(self, msg):
+    def listener_callback_force(self, msg):
         # Log the received message
-        self.get_logger().info(f'[GatewayTCPTargetEmioGripper] Received: {msg}')
+        # self.get_logger().info(f'[GatewayEmioJoystick] Received force: {msg}')
 
-        if len(msg.data) != 7:
-            self.get_logger().error(f'[GatewayTCPTargetEmioGripper] Invalid message length: {len(msg.data)}')
+        if len(msg.data) != 3:
+            self.get_logger().error(f'[GatewayEmioJoystick] Invalid message length: {len(msg.data)}')
             return
 
-        # Convert compact Emio configuration to extended Emio configuration
-        gripper_msg = Float32MultiArray()
-        gripper_msg.data = [0.0] * 7
+        # Copy last position
+        force_msg = msg.data
+        position = [0., 0., 0., 0., 0., 0., 1.]
+        for i in range(7):
+            position[i] = self.last_position[i]
         
+        # Don't apply small forces
+        for i in range(3):
+            if -1000.0 < force_msg[i] < 1000.0:
+                force_msg[i] = 0.0
+            else:
+                force_msg[i] = force_msg[i] * 1e-2
+        if force_msg[0] == 0.0 and force_msg[1] == 0.0 and force_msg[2] == 0.0:
+            return
+
         # Position in mm
-        eps = 2 # in mm
-        shift_y = 350 # in mm
-        gripper_msg.data[0] = msg.data[0] if abs(msg.data[0] - self.last_position[0]) > eps else self.last_position[0]
-        gripper_msg.data[1] = msg.data[1] - shift_y if abs(msg.data[1] - self.last_position[1]) > eps else self.last_position[1] - shift_y
-        gripper_msg.data[2] = msg.data[2] if abs(msg.data[2] - self.last_position[2]) > eps else self.last_position[2]
+        position[0] += force_msg[0]
+        position[1] += force_msg[1] 
+        position[2] += force_msg[2] 
 
-        if gripper_msg.data[1] < -250:
-            gripper_msg.data[1] = -250
-        elif gripper_msg.data[1] > -175:
-            gripper_msg.data[1] = -175
-
-        # Store the last position
-        self.last_position[0] = gripper_msg.data[0] 
-        self.last_position[1] = msg.data[1]
-        self.last_position[2] = gripper_msg.data[2]
-
-        # Orientation
-        gripper_msg.data[3] = msg.data[3]
-        gripper_msg.data[4] = msg.data[4]
-        gripper_msg.data[5] = msg.data[5]
-        gripper_msg.data[6] = msg.data[6]
+        # Clamp the position values to the range [-250, -175] in y direction
+        position[0] = max(-60, min(position[0], 60))
+        position[1] = max(-260, min(position[1], -155))
+        position[2] = max(-60, min(position[2], 60))
 
         # Forward the message to the publisher
-        self.publisher.publish(gripper_msg)
-        self.get_logger().info(f'[GatewayTCPTargetEmioGripper] Forwarded: {gripper_msg}')
+        position_msg = Float32MultiArray()
+        position_msg.data = position
+        self.publisher.publish(position_msg)
+
+
+
+    def listener_callback_position(self, msg):
+        # Log the received message
+        # self.get_logger().info(f'[GatewayEmioJoystick] Received: {msg}')
+
+        if len(msg.data) != 7:
+            self.get_logger().error(f'[GatewayEmioJoystick] Invalid message length: {len(msg.data)}')
+            return
+
+        for i in range(7):
+            self.last_position[i] = msg.data[i]
 
 
 def main(args=None):
     rclpy.init(args=args)
-    gateway = GatewayTCPTargetEmioGripper()
+    gateway = GatewayEmioJoystick()
     rclpy.spin(gateway)
     gateway.destroy_node()
     rclpy.shutdown()
