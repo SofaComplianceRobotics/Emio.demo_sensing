@@ -32,6 +32,6 @@ python gatewayTurtleNode.py
 On the GUI, select the window __Windows>Input/Output__. From this window __Input/Output__, in the output section, select the topic __Sensor/Force__ and click toggle the __Publish__ button.
 Run the simulation by clicking the play button (top middle of the 3D view). You can now play with the demo. 
 
-#runsofa-button("assets/labs/lab_sensing/lab_sensing.py")
+#runsofa-button("assets/labs/lab5/lab_sensing.py")
 
 ::::

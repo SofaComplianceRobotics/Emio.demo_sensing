@@ -4,9 +4,12 @@ from math import pi
 import Sofa.ImGui as MyGui
 import Sofa.Core
 
-sys.path.append(os.path.dirname(os.path.realpath(__file__))+"/../EmioLabs/assets/")
+sys.path.append(os.path.dirname(os.path.realpath(__file__))+"/../../assets/")
 import parts.connection.emiomotors as EmioMotors
-
+from Serial import *
+from CameraTargetController import *
+from FlexTargetController import *
+from enum import Enum
 
 class MotorController(Sofa.Core.Controller):
     """
@@ -39,50 +42,6 @@ class MotorController(Sofa.Core.Controller):
             EmioMotors.setAngle(angles)
 
 
-class TargetController(Sofa.Core.Controller):
-    """
-    Controller class to set the target position of the effector.
-    The target is the effector position of the real device given by the depth camera.
-    To correct the error from the position of the camera, we substract the error calculated at the end of the assembly animation. 
-    """
-    def __init__(self, rootnode, assemblycontroller, sensor):
-        Sofa.Core.Controller.__init__(self)
-        self.name = "TargetController"
-        self.rootnode = rootnode
-        self.target = rootnode.DepthCamera.getMechanicalState()
-        self.effector = rootnode.Simulation.Emio.CenterPart.Effector
-        self.assemblycontroller = assemblycontroller
-        self.sensor = sensor
-
-        # The camera error correction
-        self.correctiondone = False
-        self.cameracorrection = [0, 0, 0]
-
-    def onAnimateBeginEvent(self, _):
-        
-        # When the assembly animation is done, we can correct the camera position
-        # Once the correction calculated, we can apply the sensed force to the simulated robot
-        if not self.correctiondone and self.assemblycontroller.done:
-            self.correctiondone = True # We only want to do this once
-            for i in range(3):
-                self.cameracorrection[i] = self.target.position.value[0][i] - self.effector.getMechanicalState().position.value[0][i]
-            self.rootnode.Simulation.Emio.CenterPart.Sensor.ForcePointActuator.applyForce=True
-
-        # Update the target position of the effector
-        # The target position is the position from the camera minus the correction
-        self.effector.EffectorCoord.effectorGoal.value = [[self.target.position.value[0][0] - self.cameracorrection[0],
-                                                            self.target.position.value[0][1] - self.cameracorrection[1],
-                                                            self.target.position.value[0][2] - self.cameracorrection[2],
-                                                            0., 0., 0., 1.]]
-        
-    def onAnimateEndEvent(self, _):
-        # Update the force applied on the sensor
-        dt = self.rootnode.dt.value
-        self.sensor.Force.value = [self.sensor.ForcePointActuator.force.value[0] / dt,
-                                   self.sensor.ForcePointActuator.force.value[1] / dt,
-                                   self.sensor.ForcePointActuator.force.value[2] / dt]
-
-
 def getParserArgs():
     """
     Parse the command line arguments.
@@ -108,7 +67,7 @@ def createScene(rootnode):
     from parts.emio import Emio
 
     args = getParserArgs()
-
+    SensingMethod = Enum('Method', [('Camera', 1), ('Flex', 2)])
     settings, modelling, simulation = addHeader(rootnode, inverse=True)
     rootnode.VisualStyle.displayFlags = ["showVisual", "showInteractionForceFields"]
 
@@ -117,8 +76,8 @@ def createScene(rootnode):
 
     # Add Emio to the scene
     emio = Emio(name="Emio",
-                legsName=["sleg"],
-                legsModel=["tetra"],
+                legsName=["blueleg"],
+                legsModel=["beam"],
                 legsPositionOnMotor=["counterclockwiseup", "clockwiseup", "counterclockwiseup", "clockwiseup"],
                 centerPartName="yellowpart",
                 centerPartType="rigid",
@@ -143,6 +102,7 @@ def createScene(rootnode):
 
         # Motors controller and configuration
         simulation.addData(name="tilt", type="bool", value=False)
+        simulation.addData(name="Camerasensing", type = "bool", value = False)
         # Let's consider two configurations of the robot:
         # 1. The robot is in a upward straight configuration
         config1_angles = [-0.48, 0.48, -0.48, 0.48]
@@ -160,9 +120,9 @@ def createScene(rootnode):
                                                        track_colors=True,
                                                        comp_point_cloud=False,
                                                        scale=1,
-                                                       filter_alpha=0.6, # Factor used in the filter
-                                                       rotation=emio.Camera.torealrotation,
-                                                       translation=emio.Camera.torealtranslation))
+                                                       filter_alpha=0.6)) # Factor used in the filter
+                                                       #rotation=emio.Camera.torealrotation,
+                                                       #translation=emio.Camera.torealtranslation))
         except RuntimeError as e:
             Sofa.msg_error(__file__, "Problem with the camera: " + str(e))
 
@@ -174,8 +134,23 @@ def createScene(rootnode):
                             limitShiftToTarget=True,
                             maxShiftToTarget=50,  # mm
                             effectorGoal=[0, 165, 0, 0, 0, 0, 1], 
-                            name="EffectorCoord")
+                            name="CameraEffectorCoord")
     emio.effector.addObject("RigidMapping", index=0)
+
+    emio.addObject(serialReader())
+
+    
+    for leg in range(len(emio.legs)) :
+        defPart = emio.legs[leg].getChild("Leg"+str(leg)+"DeformablePart")
+        defPart.Leg.addObject('PositionEffector', template="Rigid3", 
+                                indices=[5],
+                                useDirections=[0, 0, 0, 1, 1, 0],
+                                limitShiftToTarget=True,
+                                maxShiftToTarget=50,  # mm
+                                effectorGoal=[0, 0, 0, 0, 0, 0, 1], 
+                                name="Flex" + str(leg) +"EffectorCoord")
+        
+    
 
     # Sensor (to retrieve the forces applied on the real robot effector)
     sensor = emio.centerpart.addChild("Sensor")
@@ -195,11 +170,15 @@ def createScene(rootnode):
     MyGui.SimulationState.addData("Sensor", "Force", sensor.Force) # We use this to send the force through ROS2
     MyGui.SimulationState.addData("TCP", "Frame", emio.effector.getMechanicalState().position) # We use this to send the position effector through ROS2
     MyGui.MyRobotWindow.addSetting("Configuration", simulation.tilt, 0, 1) # Add a setting ti the GUI to choose the configuration of the robot
+    MyGui.MyRobotWindow.addSetting("Sensing Method", simulation.Camerasensing, 0, 1)
 
     if dotTracker is not None:
         # Feed the effector target with the camera position
-        rootnode.addObject(TargetController(rootnode=rootnode, 
+        rootnode.addObject(CameraTargetController(rootnode=rootnode, 
                                             assemblycontroller=assemblycontroller, 
-                                            sensor=sensor))
+                                            sensor=sensor, isActive = simulation.Camerasensing))
+    rootnode.addObject(FlexTargetController(rootnode=rootnode, 
+                                            assemblycontroller=assemblycontroller, 
+                                            sensor=sensor, isActive = not(simulation.Camerasensing), useSensor = [1, 0, 0, 0], serial = emio.serialReader))
 
     return rootnode
