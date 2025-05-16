@@ -18,7 +18,7 @@ class CameraTargetController(Sofa.Core.Controller):
         self.name = "CameraTargetController"
         self.rootnode = rootnode
         self.target = rootnode.DepthCamera.getMechanicalState()
-        self.effector = rootnode.Simulation.Emio.CenterPart.Effector
+        #self.effector = rootnode.Simulation.Emio.CenterPart.Effector
         self.assemblycontroller = assemblycontroller
         self.sensor = sensor
         self.isActive = isActive
@@ -28,7 +28,7 @@ class CameraTargetController(Sofa.Core.Controller):
         self.cameracorrection = [0, 0, 0]
 
     def onAnimateBeginEvent(self, _):
-        if self.isActive:
+        if self.isActive.value:
         # When the assembly animation is done, we can correct the camera position
         # Once the correction calculated, we can apply the sensed force to the simulated robot
             if not self.correctiondone and self.assemblycontroller.done:
@@ -45,7 +45,7 @@ class CameraTargetController(Sofa.Core.Controller):
                                                                 0., 0., 0., 1.]]
         
     def onAnimateEndEvent(self, _):
-        if self.isActive:
+        if self.isActive.value:
             # Update the force applied on the sensor
             dt = self.rootnode.dt.value
             self.sensor.Force.value = [self.sensor.ForcePointActuator.force.value[0] / dt,

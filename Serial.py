@@ -19,8 +19,8 @@ class serialReader(Sofa.Core.Controller):
         except SerialException:
             Sofa.msg_error(__file__, "Please plug the serial bus in")
             self.ser = None
-        self.angleflat = [] * 4
-        self.angleper = [] * 4
+        self.angleflat = [0, 0, 0, 0]
+        self.angleper = [0, 0, 0, 0]
         self.t1 = threading.Thread(target = self.Read)
 
 
@@ -29,14 +29,15 @@ class serialReader(Sofa.Core.Controller):
             value = 0
             value = self.ser.read(6)
             leg = value[0]
-            self.angleflat[leg] = value[2] | (value[3])<<8
-            self.angleper[leg] = value[4] | (value[5])<<8
+            self.angleper[leg] = value[2] | (value[3])<<8
+            self.angleflat[leg] = value[4] | (value[5])<<8
             if(self.angleflat[leg] > 32768):
                 self.angleflat[leg] = -65535 + self.angleflat[leg]
             if(self.angleper[leg] > 32768):
                 self.angleper[leg] = -65535 + self.angleper[leg]
             self.angleflat[leg] = self.angleflat[leg]/32
             self.angleper[leg] = self.angleper[leg]/32
+            print(self.angleflat[0])
 
 
     def Start(self) :
@@ -46,5 +47,5 @@ class serialReader(Sofa.Core.Controller):
     def getAngles(self, leg):
         Flat = self.angleflat[leg] - AngleCorrection
         Per = self.angleper[leg] - AngleCorrection
-        print(Flat)
+        
         return Flat, Per

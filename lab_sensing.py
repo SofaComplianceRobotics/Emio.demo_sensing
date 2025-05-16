@@ -22,24 +22,25 @@ class MotorController(Sofa.Core.Controller):
         Sofa.Core.Controller.__init__(self, *args, **kwargs)
         self.name = "MotorController"
         self.emio = emio
-        self.tilt = emio.getRoot().Simulation.tilt
+        #self.tilt = emio.getRoot().Simulation.tilt
         self.config1_angles = config1_angles
         self.config2_angles = config2_angles
         EmioMotors.openAndConfig()
+        self.angles = [emio.getRoot().Simulation.tilt0, emio.getRoot().Simulation.tilt1, emio.getRoot().Simulation.tilt2, emio.getRoot().Simulation.tilt3]
 
     def onAnimateEndEvent(self, _):
         # Check and apply the chosen configuration 
-        angles = self.config1_angles
-        if self.tilt.value: 
-            angles = self.config2_angles
+        #angles = self.config1_angles
+        #if self.tilt.value: 
+            #angles = self.config2_angles
         
         # Apply the configuration to the motors in the simulation
         for i in range(4):
-            self.emio.motors[i].getMechanicalState().rest_position.value = [[angles[i]]]
+            self.emio.motors[i].getMechanicalState().rest_position.value = [[self.angles[i].value]]
 
         # Send the angles to the real robot
         if MyGui.getRobotConnection():
-            EmioMotors.setAngle(angles)
+            EmioMotors.setAngle(self.angles)
 
 
 def getParserArgs():
@@ -74,6 +75,7 @@ def createScene(rootnode):
     rootnode.dt = 0.01
     rootnode.gravity = [0., -9810., 0.]
 
+
     # Add Emio to the scene
     emio = Emio(name="Emio",
                 legsName=["blueleg"],
@@ -94,15 +96,23 @@ def createScene(rootnode):
 
     # In this lab we fix the motor
     for i in range(4):
-        emio.motors[i].addObject("RestShapeSpringsForceField", points=[0], stiffness=1e6)
+        emio.motors[i].addObject("RestShapeSpringsForceField", points=[0], stiffness=1e9)
 
     # Let's now add the components for the connection to the real robot 
     dotTracker = None
     if args.connection:
 
         # Motors controller and configuration
-        simulation.addData(name="tilt", type="bool", value=False)
+        simulation.addData(name="tilt0", type="float", value=-0.48)
+        simulation.addData(name="tilt1", type="float", value=0.48)
+        simulation.addData(name="tilt2", type="float", value=-0.48)
+        simulation.addData(name="tilt3", type="float", value=0.48)
         simulation.addData(name="Camerasensing", type = "bool", value = False)
+        simulation.addData(name="TargetAngle1", type = "int", value = 0)
+        simulation.addData(name="TargetAngle2", type = "int", value = 0)
+        simulation.addData(name="TargetAngle3", type = "int", value = 0)
+        simulation.addData(name="TargetAngle4", type = "int", value = 0)
+        simulation.addData(name="TargetAngleAll", type = "int", value = 0)
         # Let's consider two configurations of the robot:
         # 1. The robot is in a upward straight configuration
         config1_angles = [-0.48, 0.48, -0.48, 0.48]
@@ -127,15 +137,15 @@ def createScene(rootnode):
             Sofa.msg_error(__file__, "Problem with the camera: " + str(e))
 
     # Add the position we want to observe (the effector)
-    emio.effector.addObject("MechanicalObject", template="Rigid3", position=[[0, 0, 0, 0, 0, 0, 1]])
-    emio.effector.addObject('PositionEffector', template="Rigid3", 
-                            indices=[0],
-                            useDirections=[1, 1, 1, 0, 0, 0],
-                            limitShiftToTarget=True,
-                            maxShiftToTarget=50,  # mm
-                            effectorGoal=[0, 165, 0, 0, 0, 0, 1], 
-                            name="CameraEffectorCoord")
-    emio.effector.addObject("RigidMapping", index=0)
+    # emio.effector.addObject("MechanicalObject", template="Rigid3", position=[[0, 0, 0, 0, 0, 0, 1]])
+    # emio.effector.addObject('PositionEffector', template="Rigid3", 
+    #                         indices=[0],
+    #                         useDirections=[0, 0, 0, 0, 0, 1],
+    #                         limitShiftToTarget=True,
+    #                         maxShiftToTarget=50,  # mm
+    #                         effectorGoal=[0, 165, 0, 0, 0, 0, 1], 
+    #                         name="CameraEffectorCoord")
+    # emio.effector.addObject("RigidMapping", index=0)
 
     emio.addObject(serialReader())
 
@@ -143,12 +153,12 @@ def createScene(rootnode):
     for leg in range(len(emio.legs)) :
         defPart = emio.legs[leg].getChild("Leg"+str(leg)+"DeformablePart")
         defPart.Leg.addObject('PositionEffector', template="Rigid3", 
-                                indices=[5],
-                                useDirections=[0, 0, 0, 1, 1, 0],
-                                limitShiftToTarget=True,
-                                maxShiftToTarget=50,  # mm
-                                effectorGoal=[0, 0, 0, 0, 0, 0, 1], 
-                                name="Flex" + str(leg) +"EffectorCoord")
+                                    indices=[8],
+                                    useDirections=[0, 0, 0, 1, 0, 1],
+                                    limitShiftToTarget=True,
+                                    maxShiftToTarget=50,  # mm
+                                    effectorGoal=[0, 0, 0, 0, 0, 0, 1], 
+                                    name="Flex" + str(leg) +"EffectorCoord")
         
     
 
@@ -161,16 +171,26 @@ def createScene(rootnode):
                     direction=[0, 0, 0],
                     applyForce=False, # We only want to apply the force when the assembly is done
                     showForce=True, 
-                    visuScale=2
+                    maxForceVariation = 5,
+                    visuScale=1,
                     )
     sensor.addObject("RigidMapping", index=0)
     sensor.addData(name="Force", type="Vec3d", value=[0, 0, 0]) # We use this to store and send the sensed force through ROS2
 
     # GUI
     MyGui.SimulationState.addData("Sensor", "Force", sensor.Force) # We use this to send the force through ROS2
-    MyGui.SimulationState.addData("TCP", "Frame", emio.effector.getMechanicalState().position) # We use this to send the position effector through ROS2
-    MyGui.MyRobotWindow.addSetting("Configuration", simulation.tilt, 0, 1) # Add a setting ti the GUI to choose the configuration of the robot
+    #.SimulationState.addData("TCP", "Frame", emio.effector.getMechanicalState().position) # We use this to send the position effector through ROS2
+    MyGui.MyRobotWindow.addSetting("Configuration0", simulation.tilt0, -3.14, 3.14) # Add a setting ti the GUI to choose the configuration of the robot
+    MyGui.MyRobotWindow.addSetting("Configuration1", simulation.tilt1, -3.14, 3.14)
+    MyGui.MyRobotWindow.addSetting("Configuration2", simulation.tilt2, -3.14, 3.14)
+    MyGui.MyRobotWindow.addSetting("Configuration3", simulation.tilt3, -3.14, 3.14)
     MyGui.MyRobotWindow.addSetting("Sensing Method", simulation.Camerasensing, 0, 1)
+    MyGui.MyRobotWindow.addSetting("Angle target 1", simulation.TargetAngle1, -90, 15)
+    MyGui.MyRobotWindow.addSetting("Angle target 2", simulation.TargetAngle2, -90, 15)
+    MyGui.MyRobotWindow.addSetting("Angle target 3", simulation.TargetAngle3, -90, 15)
+    MyGui.MyRobotWindow.addSetting("Angle target 4", simulation.TargetAngle4, -90, 15)
+    MyGui.MyRobotWindow.addSetting("Angle target All", simulation.TargetAngleAll, -90, 15)
+
 
     if dotTracker is not None:
         # Feed the effector target with the camera position
@@ -179,6 +199,6 @@ def createScene(rootnode):
                                             sensor=sensor, isActive = simulation.Camerasensing))
     rootnode.addObject(FlexTargetController(rootnode=rootnode, 
                                             assemblycontroller=assemblycontroller, 
-                                            sensor=sensor, isActive = not(simulation.Camerasensing), useSensor = [1, 0, 0, 0], serial = emio.serialReader))
+                                            sensor=sensor, isActive = simulation.Camerasensing, useSensor = [1, 1, 1, 1], serial = emio.serialReader))
 
     return rootnode
