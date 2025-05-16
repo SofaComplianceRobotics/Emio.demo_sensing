@@ -16,19 +16,22 @@ class FlexTargetController(Sofa.Core.Controller):
         self.rootnode = rootnode
         self.serial = serial
         self.useSensor = useSensor
-        hierarchy = rootnode.Simulation.Emio
-        self.effector = [hierarchy.Leg0.Leg0DeformablePart.Leg.Flex0EffectorCoord, 
-                        hierarchy.Leg1.Leg1DeformablePart.Leg.Flex1EffectorCoord,
-                        hierarchy.Leg2.Leg2DeformablePart.Leg.Flex2EffectorCoord,
-                        hierarchy.Leg3.Leg3DeformablePart.Leg.Flex3EffectorCoord]
+        self.hierarchy = rootnode.Simulation.Emio
+        self.effector = [self.hierarchy.Leg0.Leg0DeformablePart.Leg.Flex0EffectorCoord, 
+                        self.hierarchy.Leg1.Leg1DeformablePart.Leg.Flex1EffectorCoord,
+                        self.hierarchy.Leg2.Leg2DeformablePart.Leg.Flex2EffectorCoord,
+                        self.hierarchy.Leg3.Leg3DeformablePart.Leg.Flex3EffectorCoord]
         self.assemblycontroller = assemblycontroller
         self.sensor = sensor
         self.isActive = isActive
+        self.initTarget = False
         self.serial.Start()
 
 
     def onAnimateBeginEvent(self, _):
         if not(self.isActive.value) :
+            if self.initTarget == False:
+                self.initEffector()
             if self.assemblycontroller.done:
                 self.rootnode.Simulation.Emio.CenterPart.Sensor.ForcePointActuator.applyForce=True
                 
@@ -55,6 +58,10 @@ class FlexTargetController(Sofa.Core.Controller):
                                                                             -goalOrientation[0][1], 
                                                                             -goalOrientation[0][2], 
                                                                             -goalOrientation[0][3]]]
+                        
+        elif self.initTarget == True:
+            self.deinitEffector()
+        
         
     def onAnimateEndEvent(self, _):
         if not(self.isActive.value) :
@@ -63,4 +70,17 @@ class FlexTargetController(Sofa.Core.Controller):
             self.sensor.Force.value = [self.sensor.ForcePointActuator.force.value[0] / dt,
                                     self.sensor.ForcePointActuator.force.value[1] / dt,
                                     self.sensor.ForcePointActuator.force.value[2] / dt]
+            
+    def initEffector(self):
+        self.initTarget = True
+            # Add the position we want to observe (the effector)
+        for leg in range(len(self.rootnode.Simulation.Emio.legs)) :
+            self.effector[leg].activated = 1
+        
+        
+    def deinitEffector(self):
+        self.initTarget = False
+        for leg in range(len(self.rootnode.Simulation.Emio.legs)) :
+            self.effector[leg].activated = 0
+
             

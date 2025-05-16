@@ -18,22 +18,15 @@ class MotorController(Sofa.Core.Controller):
     Only two possible configurations of the robot are considered in this lab.
     """
     
-    def __init__(self, emio, config1_angles, config2_angles, *args, **kwargs):
+    def __init__(self, emio, *args, **kwargs):
         Sofa.Core.Controller.__init__(self, *args, **kwargs)
         self.name = "MotorController"
         self.emio = emio
-        #self.tilt = emio.getRoot().Simulation.tilt
-        self.config1_angles = config1_angles
-        self.config2_angles = config2_angles
         EmioMotors.openAndConfig()
         self.angles = [emio.getRoot().Simulation.tilt0, emio.getRoot().Simulation.tilt1, emio.getRoot().Simulation.tilt2, emio.getRoot().Simulation.tilt3]
 
     def onAnimateEndEvent(self, _):
         # Check and apply the chosen configuration 
-        #angles = self.config1_angles
-        #if self.tilt.value: 
-            #angles = self.config2_angles
-        
         # Apply the configuration to the motors in the simulation
         for i in range(4):
             self.emio.motors[i].getMechanicalState().rest_position.value = [[self.angles[i].value]]
@@ -107,7 +100,10 @@ def createScene(rootnode):
         simulation.addData(name="tilt1", type="float", value=0.48)
         simulation.addData(name="tilt2", type="float", value=-0.48)
         simulation.addData(name="tilt3", type="float", value=0.48)
+        
         simulation.addData(name="Camerasensing", type = "bool", value = False)
+        
+        # sliders to modify the target orientation of the legs. Set a difference from the resting orientation
         simulation.addData(name="TargetAngle1", type = "int", value = 0)
         simulation.addData(name="TargetAngle2", type = "int", value = 0)
         simulation.addData(name="TargetAngle3", type = "int", value = 0)
@@ -115,10 +111,7 @@ def createScene(rootnode):
         simulation.addData(name="TargetAngleAll", type = "int", value = 0)
         # Let's consider two configurations of the robot:
         # 1. The robot is in a upward straight configuration
-        config1_angles = [-0.48, 0.48, -0.48, 0.48]
-        # 2. The robot is tilted, in the direction away from the camera allowing it to better see the marker
-        config2_angles = [-0.99, 0.99, 0.45, -0.45]
-        rootnode.addObject(MotorController(emio, config1_angles, config2_angles))
+        rootnode.addObject(MotorController(emio))
 
         # Camera
         try:
@@ -136,31 +129,29 @@ def createScene(rootnode):
         except RuntimeError as e:
             Sofa.msg_error(__file__, "Problem with the camera: " + str(e))
 
-    # Add the position we want to observe (the effector)
-    # emio.effector.addObject("MechanicalObject", template="Rigid3", position=[[0, 0, 0, 0, 0, 0, 1]])
-    # emio.effector.addObject('PositionEffector', template="Rigid3", 
-    #                         indices=[0],
-    #                         useDirections=[0, 0, 0, 0, 0, 1],
-    #                         limitShiftToTarget=True,
-    #                         maxShiftToTarget=50,  # mm
-    #                         effectorGoal=[0, 165, 0, 0, 0, 0, 1], 
-    #                         name="CameraEffectorCoord")
-    # emio.effector.addObject("RigidMapping", index=0)
+    emio.effector.addObject("MechanicalObject", template="Rigid3", position=[[0, 0, 0, 0, 0, 0, 1]])
+    emio.effector.addObject('PositionEffector', template="Rigid3", 
+                            indices=[0],
+                            useDirections=[0, 0, 0, 0, 0, 1],
+                            limitShiftToTarget=True,
+                            maxShiftToTarget=50,  # mm
+                            effectorGoal=[0, 165, 0, 0, 0, 0, 1], 
+                            name="CameraEffectorCoord")
+    emio.effector.addObject("RigidMapping", index=0)
+    emio.effector.CameraEffectorCoord.activated = 0
 
     emio.addObject(serialReader())
 
-    
     for leg in range(len(emio.legs)) :
-        defPart = emio.legs[leg].getChild("Leg"+str(leg)+"DeformablePart")
-        defPart.Leg.addObject('PositionEffector', template="Rigid3", 
-                                    indices=[8],
-                                    useDirections=[0, 0, 0, 1, 0, 1],
-                                    limitShiftToTarget=True,
-                                    maxShiftToTarget=50,  # mm
-                                    effectorGoal=[0, 0, 0, 0, 0, 0, 1], 
-                                    name="Flex" + str(leg) +"EffectorCoord")
-        
-    
+        defPart =emio.legs[leg].getChild("Leg"+str(leg)+"DeformablePart")
+        PE = defPart.Leg.addObject('PositionEffector', template="Rigid3", 
+                                indices=[8],
+                                useDirections=[0, 0, 0, 1, 0, 1],
+                                limitShiftToTarget=True,
+                                maxShiftToTarget=50,  # mm
+                                effectorGoal=[0, 0, 0, 0, 0, 0, 1], 
+                                name="Flex" + str(leg) +"EffectorCoord")
+        PE.activated = 0
 
     # Sensor (to retrieve the forces applied on the real robot effector)
     sensor = emio.centerpart.addChild("Sensor")
@@ -194,11 +185,14 @@ def createScene(rootnode):
 
     if dotTracker is not None:
         # Feed the effector target with the camera position
+        print("start target controllers")
         rootnode.addObject(CameraTargetController(rootnode=rootnode, 
                                             assemblycontroller=assemblycontroller, 
                                             sensor=sensor, isActive = simulation.Camerasensing))
+        print("camera done")
     rootnode.addObject(FlexTargetController(rootnode=rootnode, 
                                             assemblycontroller=assemblycontroller, 
                                             sensor=sensor, isActive = simulation.Camerasensing, useSensor = [1, 1, 1, 1], serial = emio.serialReader))
+    print("flex done")
 
     return rootnode

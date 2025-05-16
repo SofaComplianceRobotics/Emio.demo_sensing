@@ -1,11 +1,10 @@
 import os
 import sys
 from math import pi
-import Sofa.ImGui as MyGui
 import Sofa.Core
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__))+"/../../assets/")
-import parts.connection.emiomotors as EmioMotors
+
 
 class CameraTargetController(Sofa.Core.Controller):
     """
@@ -18,17 +17,21 @@ class CameraTargetController(Sofa.Core.Controller):
         self.name = "CameraTargetController"
         self.rootnode = rootnode
         self.target = rootnode.DepthCamera.getMechanicalState()
-        #self.effector = rootnode.Simulation.Emio.CenterPart.Effector
+        self.effector = rootnode.Simulation.Emio.CenterPart.Effector
         self.assemblycontroller = assemblycontroller
         self.sensor = sensor
         self.isActive = isActive
+        self.initTarget = False
 
         # The camera error correction
         self.correctiondone = False
         self.cameracorrection = [0, 0, 0]
 
+
     def onAnimateBeginEvent(self, _):
         if self.isActive.value:
+            if self.initTarget == False:
+                self.initEffector()
         # When the assembly animation is done, we can correct the camera position
         # Once the correction calculated, we can apply the sensed force to the simulated robot
             if not self.correctiondone and self.assemblycontroller.done:
@@ -43,6 +46,8 @@ class CameraTargetController(Sofa.Core.Controller):
                                                                 self.target.position.value[0][1] - self.cameracorrection[1],
                                                                 self.target.position.value[0][2] - self.cameracorrection[2],
                                                                 0., 0., 0., 1.]]
+        elif self.initTarget == True:
+            self.deinitEffector()
         
     def onAnimateEndEvent(self, _):
         if self.isActive.value:
@@ -51,3 +56,14 @@ class CameraTargetController(Sofa.Core.Controller):
             self.sensor.Force.value = [self.sensor.ForcePointActuator.force.value[0] / dt,
                                     self.sensor.ForcePointActuator.force.value[1] / dt,
                                     self.sensor.ForcePointActuator.force.value[2] / dt]
+            
+    def initEffector(self):
+        self.initTarget = True
+        self.rootnode.Simulation.Emio.effector.CameraEffectorCoord.activated = 1
+            # Add the position we want to observe (the effector)
+
+        
+        
+    def deinitEffector(self):
+        self.initTarget = False
+        self.rootnode.Simulation.Emio.effector.CameraEffectorCoord.activated = 0
