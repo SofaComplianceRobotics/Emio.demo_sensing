@@ -156,7 +156,7 @@ def createScene(rootnode):
             dotTracker = rootnode.addObject(DotTracker(name="DotTracker",
                                                        root=rootnode,
                                                        nb_tracker=1,
-                                                       show_video_feed=False,
+                                                       show_video_feed=True,
                                                        track_colors=True,
                                                        comp_point_cloud=False,
                                                        scale=1,

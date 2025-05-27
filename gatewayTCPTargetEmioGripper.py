@@ -70,9 +70,9 @@ class GatewayEmioJoystick(Node):
         position[2] += force_msg[2] 
 
         # Clamp the position values to the range [-250, -175] in y direction
-        position[0] = max(-60, min(position[0], 60))
-        position[1] = max(-260, min(position[1], -155))
-        position[2] = max(-60, min(position[2], 60))
+        position[0] = max(-40, min(position[0], 40))
+        position[1] = max(-250, min(position[1], -175))
+        position[2] = max(-40, min(position[2], 40))
 
         # Forward the message to the publisher
         position_msg = Float32MultiArray()
