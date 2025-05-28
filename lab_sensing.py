@@ -5,10 +5,10 @@ import Sofa.ImGui as MyGui
 import Sofa.Core
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__))+"/../EmioLabs/assets/")
-import parts.connection.emiomotors as EmioMotors
+from parts.controllers.motorcontroller import MotorController
 
 
-class MotorController(Sofa.Core.Controller):
+class MyMotorController(MotorController):
     """
     Controller class for the Emio robot's motors.
     Send the angles to the motors.
@@ -16,13 +16,12 @@ class MotorController(Sofa.Core.Controller):
     """
     
     def __init__(self, emio, config1_angles, config2_angles, *args, **kwargs):
-        Sofa.Core.Controller.__init__(self, *args, **kwargs)
+        MotorController.__init__(self, None, *args, **kwargs)
         self.name = "MotorController"
         self.emio = emio
         self.tilt = emio.getRoot().Simulation.tilt
         self.config1_angles = config1_angles
         self.config2_angles = config2_angles
-        EmioMotors.openAndConfig()
 
     def onAnimateEndEvent(self, _):
         # Check and apply the chosen configuration 
@@ -35,8 +34,13 @@ class MotorController(Sofa.Core.Controller):
             self.emio.motors[i].getMechanicalState().rest_position.value = [[angles[i]]]
 
         # Send the angles to the real robot
-        if MyGui.getRobotConnection():
-            EmioMotors.setAngle(angles)
+        if MyGui.getRobotConnectionToggle() and self.emiomotors.is_connected:
+            try:
+                self.emiomotors.angles = angles
+            except Exception as e:
+                Sofa.msg_error("MotorController - onAnimate", str(e))
+                MyGui.setRobotConnectionToggle(False)
+                self.emiomotors.close()
 
 
 class TargetController(Sofa.Core.Controller):
@@ -148,7 +152,7 @@ def createScene(rootnode):
         config1_angles = [-0.48, 0.48, -0.48, 0.48]
         # 2. The robot is tilted, in the direction away from the camera allowing it to better see the marker
         config2_angles = [-0.99, 0.99, 0.45, -0.45]
-        rootnode.addObject(MotorController(emio, config1_angles, config2_angles))
+        rootnode.addObject(MyMotorController(emio, config1_angles, config2_angles))
 
         # Camera
         try:
