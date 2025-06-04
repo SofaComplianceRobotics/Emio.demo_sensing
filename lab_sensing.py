@@ -139,7 +139,7 @@ def createScene(rootnode):
 
     # In this lab we fix the motor
     for i in range(4):
-        emio.motors[i].addObject("RestShapeSpringsForceField", points=[0], stiffness=1e6)
+        emio.motors[i].addObject("RestShapeSpringsForceField", points=[0], stiffness=1e12)
 
     # Let's now add the components for the connection to the real robot 
     dotTracker = None

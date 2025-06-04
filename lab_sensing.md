@@ -1,9 +1,9 @@
-# Lab Sensing
+# Demo Sensing
 
 ::: highlight
 ##### Overview 
 
-In this lab, we will explore the sensing capabilities of Emio. 
+In this demo, we will explore the sensing capabilities of Emio. 
 :::
 
 :::: collapse Sensing
