@@ -60,7 +60,7 @@ class GatewayEmioJoystick(Node):
             if -1000.0 < force_msg[i] < 1000.0:
                 force_msg[i] = 0.0
             else:
-                force_msg[i] = force_msg[i] * 1e-2
+                force_msg[i] = force_msg[i] * 5e-3  # Scale down the force
         if force_msg[0] == 0.0 and force_msg[1] == 0.0 and force_msg[2] == 0.0:
             return
 

@@ -53,6 +53,8 @@ class GatewayTurtleNode(Node):
         twist_msg = Twist() 
 
         cartesian = msg.data
+        cartesian[0] *= -1
+        cartesian[2] *= -1
         # we rotate the coordinates of pi/4 to match the turtlebot's coordinates
         tetha = pi / 4
         cartesian[0] = cartesian[0] * cos(tetha) - cartesian[2] * sin(tetha)

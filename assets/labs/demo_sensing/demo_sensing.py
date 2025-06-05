@@ -1,10 +1,11 @@
 import os
 import sys
 from math import pi
+import Sofa
 import Sofa.ImGui as MyGui
 import Sofa.Core
 
-sys.path.append(os.path.dirname(os.path.realpath(__file__))+"/../EmioLabs/assets/")
+sys.path.append(os.path.dirname(os.path.realpath(__file__))+"/../../../../EmioLabs/assets/")
 from parts.controllers.motorcontroller import MotorController
 
 
