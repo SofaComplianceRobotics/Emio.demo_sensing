@@ -160,14 +160,13 @@ def createScene(rootnode):
             from parts.controllers.trackercontroller import DotTracker
             dotTracker = rootnode.addObject(DotTracker(name="DotTracker",
                                                        root=rootnode,
+                                                       configuration="compact",
                                                        nb_tracker=1,
                                                        show_video_feed=True,
                                                        track_colors=True,
                                                        comp_point_cloud=False,
                                                        scale=1,
-                                                       filter_alpha=0.6, # Factor used in the filter
-                                                       rotation=emio.Camera.torealrotation,
-                                                       translation=emio.Camera.torealtranslation))
+                                                       filter_alpha=0.6)) # Factor used in the filter
         except RuntimeError as e:
             Sofa.msg_error(__file__, "Problem with the camera: " + str(e))
 
