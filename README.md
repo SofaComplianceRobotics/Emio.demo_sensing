@@ -8,4 +8,4 @@ The problem we want to solve is to retrieve the force applied by the user on the
 
 We can then use Emio as a joystick and ROS2 to control a turtle in the [TurtleSim](https://docs.ros.org/en/jazzy/Tutorials/Beginner-CLI-Tools/Introducing-Turtlesim/Introducing-Turtlesim.html) simulation environment.
 
-![Emio in simulation](data/images//emio-sensing.png)
+![Emio in simulation](data/images/emio-sensing.png)

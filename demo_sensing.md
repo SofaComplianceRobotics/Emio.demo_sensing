@@ -10,7 +10,7 @@ In this demo, we will explore the sensing capabilities of Emio.
 
 ## Sensing
 
-|![Simulation of the force estimation](assets/labs/demo_sensing/img/emio-sensing.png){width=80%}|
+|![Simulation of the force estimation](assets/labs/demo_sensing/data/images/emio-sensing.png){width=80%}|
 |:--------------------------------------------------------------------:|
 |**Simulation of the force estimation.**                               |
 
