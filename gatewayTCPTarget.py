@@ -49,8 +49,6 @@ class GatewayEmioJoystick(Node):
             self.get_logger().error(f'[GatewayEmioJoystick] Invalid message length: {len(msg.data)}')
             return
 
-        print("Listening Force:", msg.data)
-
         # Copy last position
         force_msg = msg.data
         position = [0., 0., 0., 0., 0., 0., 1.]
@@ -73,15 +71,12 @@ class GatewayEmioJoystick(Node):
 
         # Clamp the position values to the range [-250, -175] in y direction
         position[0] = max(-40, min(position[0], 40))
-        print(position[1])
-        print(force_msg[1])
         position[1] = max(-250, min(position[1], -175))
         position[2] = max(-40, min(position[2], 40))
 
         # Forward the message to the publisher
         position_msg = Float32MultiArray()
         position_msg.data = position
-        print("Publishing position:", position_msg.data)
         self.publisher.publish(position_msg)
 
 
@@ -94,7 +89,6 @@ class GatewayEmioJoystick(Node):
             self.get_logger().error(f'[GatewayEmioJoystick] Invalid message length: {len(msg.data)}')
             return
 
-        print("Listening position:", msg.data)
         for i in range(7):
             self.last_position[i] = msg.data[i]
 
