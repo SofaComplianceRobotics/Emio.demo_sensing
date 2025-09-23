@@ -53,6 +53,7 @@ def createScene(rootnode):
 
     # Add inverse components and GUI
     emio.addInverseComponentAndGUI(effectorTarget.getMechanicalState().position.linkpath, barycentric=True)
+    emio.effector.EffectorCoord.maxSpeed.value = 20  # mm/s
     MyGui.MoveWindow.setTCPLimits(-100, 100,
                                     emio.motors[0].JointActuator.minAngle.value,
                                     emio.motors[0].JointActuator.maxAngle.value)
