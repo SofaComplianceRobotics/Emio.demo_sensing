@@ -6,6 +6,6 @@ In this demo we fix the motor to a desired configuration. We chose a configurati
 On the real device, we track the position of the effector using a marker and the depth camera.
 The problem we want to solve is to retrieve the force applied by the user on the effector of Emio. To achieve this, we solve the inverse problem in simulation.  
 
-We can then use Emio as a joystick and ROS2 to control a turtle in the [TurtleSim](https://docs.ros.org/en/jazzy/Tutorials/Beginner-CLI-Tools/Introducing-Turtlesim/Introducing-Turtlesim.html) simulation environment.
+We can then use Emio as a joystick and ROS2 to control a turtle in the [TurtleSim](https://docs.ros.org/en/jazzy/Tutorials/Beginner-CLI-Tools/Introducing-Turtlesim/Introducing-Turtlesim.html) simulation environment, or another Emio robot!
 
 ![Emio in simulation](data/images/emio-sensing.png)
