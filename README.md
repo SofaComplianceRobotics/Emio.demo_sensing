@@ -9,3 +9,6 @@ The problem we want to solve is to retrieve the force applied by the user on the
 We can then use Emio as a joystick and ROS2 to control a turtle in the [TurtleSim](https://docs.ros.org/en/jazzy/Tutorials/Beginner-CLI-Tools/Introducing-Turtlesim/Introducing-Turtlesim.html) simulation environment, or another Emio robot!
 
 ![Emio in simulation](data/images/emio-sensing.png)
+
+**Note**: The legs used in these demos are not distributed with Emio. You can find the files to print them yourself in the _data/meshes/legs/_ folder. 
+**Instructions to print the legs**: Emio's legs (and gripper) are printed using TPU [filament](https://shop3d.ca/collections/flexible-filaments-tpu/products/bambu-lab-tpu-hf-1-75mm-1kg) with a Bambu Lab A1. Deactivate the AMS option on the Bambu Lab. For the infill, we recommend a 100% concentric pattern. You'll also get better results if you use a 0.6mm nozzle.
