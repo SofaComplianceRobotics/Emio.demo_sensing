@@ -19,7 +19,12 @@ Emio can be use as a sensor. In this demo we fix the motor to a desired configur
 On the real device, we track the position of the effector using a marker and the depth camera.
 The problem we want to solve is to retrieve the force applied by the user on the effector of Emio. To achieve this, we solve the inverse problem in simulation. 
 
-1. Run the simulation by clicking the button below, then press the play button to start the simulation (top middle of the 3D view). Set up the robot Emio like in the simulation, [connect the robot to your computer](https://docs-support.compliance-robotics.com/docs/next/Users/Emio/getting-started-with-emio/#connecting-emio-to-your-computer) and then [connect the simulation](https://docs-support.compliance-robotics.com/docs/next/Users/SOFARobotics/GUI-user-manual/#controlling-the-real-robot). You can now play with the demo. Move the effector of the real robot and observe the estimation of the force in the simulation. 
+1. Set up the Emio robot like in image above
+2. [Connect the robot to your computer](https://docs-support.compliance-robotics.com/docs/next/Users/Emio/getting-started-with-emio/#connecting-emio-to-your-computer)
+3. Run the simulation by clicking the SOFA button below
+4. On the simulation GUI, toggle the [Simulation / Robot button](https://docs-support.compliance-robotics.com/docs/next/Users/SOFARobotics/GUI-user-manual/#controlling-the-real-robot)
+5. Once the robot is connected to SOFA, press the play button to start the simulation (top middle of the 3D view)
+6. You can now play with the demo. Move the effector of the real robot and observe the estimation of the force in the simulation. 
 
     #runsofa-button("assets/labs/demo_sensing/demo_sensing.py")
 
@@ -48,11 +53,11 @@ We can use Emio as a joystick and ROS2 to control a turtle in the [TurtleSim](ht
     python gatewayTurtleNode.py
     ```
 
-3. Launch the simulation by clicking the Run SOFA button below. On the GUI (see image above):
+3. Launch the simulation by clicking the SOFA button below. On the GUI (see image above):
+    0. Redo the steps of the __Force Estimation Demo__ section     
     1. From the __Input/Output__ window, in the __Output__ section, select the topic __Sensor/Force__
-    2. and then click the __Publish__ button 
+    2. Then click the __Publish__ button 
     #runsofa-button("assets/labs/demo_sensing/demo_sensing.py")
-
 
 ::::
 
@@ -81,12 +86,13 @@ We can use Emio as a joystick to control a second Emio robot, still using ROS2.
     This script subscribes to the topics __Sensor/Force__ and __TCP/Frame__ and publishes on the topic __TCPTarget/Frame__._
 
 2. In the first simulation (Run SOFA button below), publish the force (see Image 1.):
+    0. Redo the steps of the __Force Estimation Demo__ section 
     1. From the __Input/Output__ window, in the __Output__ section, click the checkbox __Sensor/Force__
     2. And then click the __Publish__ button
 
     #runsofa-button("assets/labs/demo_sensing/demo_sensing.py")  
 
-3. Run a second simulation by clicking the button below, then press the play button to start the simulation. Set up the second robot Emio like in the simulation, [connect the robot to your computer](https://docs-support.compliance-robotics.com/docs/next/Users/Emio/getting-started-with-emio/#connecting-emio-to-your-computer) and then [connect the simulation](https://docs-support.compliance-robotics.com/docs/next/Users/SOFARobotics/GUI-user-manual/#controlling-the-real-robot).  
+4. Run a second simulation by clicking the button below, then press the play button to start the simulation. Set up the second robot Emio like in the simulation, [connect the robot to your computer](https://docs-support.compliance-robotics.com/docs/next/Users/Emio/getting-started-with-emio/#connecting-emio-to-your-computer) and then [connect the simulation](https://docs-support.compliance-robotics.com/docs/next/Users/SOFARobotics/GUI-user-manual/#controlling-the-real-robot).  
 
     Now set up the GUI (see Image 2.). From the __Input/Output__ window:
 
