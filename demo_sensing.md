@@ -19,14 +19,13 @@ Emio can be use as a sensor. In this demo we fix the motor to a desired configur
 On the real device, we track the position of the effector using a marker and the depth camera.
 The problem we want to solve is to retrieve the force applied by the user on the effector of Emio. To achieve this, we solve the inverse problem in simulation. 
 
-1. Set up the Emio robot like in image above
-2. [Connect the robot to your computer](https://docs-support.compliance-robotics.com/docs/next/Users/Emio/getting-started-with-emio/#connecting-emio-to-your-computer)
-3. Run the simulation by clicking the SOFA button below
-4. On the simulation GUI, toggle the [Simulation / Robot button](https://docs-support.compliance-robotics.com/docs/next/Users/SOFARobotics/GUI-user-manual/#controlling-the-real-robot)
-5. Once the robot is connected to SOFA, press the play button to start the simulation (top middle of the 3D view)
-6. You can now play with the demo. Move the effector of the real robot and observe the estimation of the force in the simulation. 
-
-    #runsofa-button("assets/labs/demo_sensing/demo_sensing.py")
+1. Set up the Emio robot like in image above  
+2. [Connect the robot to your computer](https://docs-support.compliance-robotics.com/docs/next/Users/Emio/getting-started-with-emio/#connecting-emio-to-your-computer)  
+3. Run the simulation by clicking the SOFA button below  
+4. On the simulation GUI, toggle the [Simulation / Robot button](https://docs-support.compliance-robotics.com/docs/next/Users/SOFARobotics/GUI-user-manual/#controlling-the-real-robot)  
+5. Once the robot is connected to SOFA, press the play button to start the simulation (top middle of the 3D view)  
+6. You can now play with the demo. Move the effector of the real robot and observe the estimation of the force in the simulation   
+   #runsofa-button("assets/labs/demo_sensing/demo_sensing.py")
 
 ::::
 
