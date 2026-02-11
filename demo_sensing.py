@@ -121,7 +121,7 @@ def createScene(rootnode):
     # Add Emio to the scene
     emio = Emio(name="Emio",
                 legsName=["sleg"],
-                legsModel=["tetra"],
+                legsModel=["beam"],
                 legsPositionOnMotor=["counterclockwiseup", "clockwiseup", "counterclockwiseup", "clockwiseup"],
                 centerPartName="yellowpart",
                 centerPartType="rigid",
