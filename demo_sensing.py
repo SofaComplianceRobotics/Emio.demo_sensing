@@ -4,7 +4,7 @@ import Sofa
 import Sofa.ImGui as MyGui
 import Sofa.Core
 
-from parts.controllers.motorcontroller import MotorController
+from emio.parts.controllers.motorcontroller import MotorController
 
 
 class MyMotorController(MotorController):
@@ -106,9 +106,9 @@ def getParserArgs():
 
 
 def createScene(rootnode):
-    from utils.header import addHeader, addSolvers
-    from parts.controllers.assemblycontroller import AssemblyController
-    from parts.emio import Emio
+    from emio.utils.header import addHeader, addSolvers
+    from emio.parts.controllers.assemblycontroller import AssemblyController
+    from emio import Emio
 
     args = getParserArgs()
 
@@ -155,7 +155,7 @@ def createScene(rootnode):
 
         # Camera
         try:
-            from parts.controllers.trackercontroller import DotTracker
+            from emio.parts.controllers.trackercontroller import DotTracker
             dotTracker = rootnode.addObject(DotTracker(name="DotTracker",
                                                        root=rootnode,
                                                        configuration="compact",
