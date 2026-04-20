@@ -25,7 +25,7 @@ The problem we want to solve is to retrieve the force applied by the user on the
 4. On the simulation GUI, toggle the [Simulation / Robot button](https://docs-support.compliance-robotics.com/docs/next/Users/SOFARobotics/GUI-user-manual/#controlling-the-real-robot)  
 5. Once the robot is connected to SOFA, press the play button to start the simulation (top middle of the 3D view)  
 6. You can now play with the demo. Move the effector of the real robot and observe the estimation of the force in the simulation   
-   #runsofa-button("assets/labs/demo_sensing/demo_sensing.py")
+   #runsofa-button(file="assets/labs/demo_sensing/demo_sensing.py")
 
 ::::
 
@@ -56,7 +56,7 @@ We can use Emio as a joystick and ROS2 to control a turtle in the [TurtleSim](ht
     0. Redo the steps of the __Force Estimation Demo__ section     
     1. From the __Input/Output__ window, in the __Output__ section, select the topic __Sensor/Force__
     2. Then click the __Publish__ button 
-    #runsofa-button("assets/labs/demo_sensing/demo_sensing.py")
+    #runsofa-button(file="assets/labs/demo_sensing/demo_sensing.py")
 
 ::::
 
@@ -89,7 +89,7 @@ We can use Emio as a joystick to control a second Emio robot, still using ROS2.
     1. From the __Input/Output__ window, in the __Output__ section, click the checkbox __Sensor/Force__
     2. And then click the __Publish__ button
 
-    #runsofa-button("assets/labs/demo_sensing/demo_sensing.py")  
+    #runsofa-button(file="assets/labs/demo_sensing/demo_sensing.py")  
 
 4. Run a second simulation by clicking the button below, then press the play button to start the simulation. Set up the second robot Emio like in the simulation, [connect the robot to your computer](https://docs-support.compliance-robotics.com/docs/next/Users/Emio/getting-started-with-emio/#connecting-emio-to-your-computer) and then [connect the simulation](https://docs-support.compliance-robotics.com/docs/next/Users/SOFARobotics/GUI-user-manual/#controlling-the-real-robot).  
 
@@ -102,7 +102,7 @@ We can use Emio as a joystick to control a second Emio robot, still using ROS2.
     5. Now in the 3D view, select __Input/Output__ from the dropdown menu.  
     _This will allow the __Input/Output__ window to control the TCP target in the simulation._ 
     
-    #runsofa-button("assets/labs/demo_sensing/demo_teleoperation.py")  
+    #runsofa-button(file="assets/labs/demo_sensing/demo_teleoperation.py")  
 
 You can now play with the demo. Move the effector of the _Joystick_ robot and observe the motion of the _Manipulator_ robot.
 
