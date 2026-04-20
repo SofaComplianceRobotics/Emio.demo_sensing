@@ -8,12 +8,12 @@ import Sofa
 
 
 def createScene(rootnode):
-    from utils.header import addHeader, addSolvers
-    from parts.gripper import Gripper
-    from parts.controllers.assemblycontroller import AssemblyController
+    from emio.utils.header import addHeader, addSolvers
+    from emio.parts.gripper import Gripper
+    from emio.parts.controllers.assemblycontroller import AssemblyController
+    from emio import Emio
+    from emio.parts.controllers.trackercontroller import DotTracker
     import Sofa.ImGui as MyGui
-    from parts.emio import Emio
-    from parts.controllers.trackercontroller import DotTracker
 
     settings, modelling, simulation = addHeader(rootnode, inverse=True)
     addSolvers(simulation)
